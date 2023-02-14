@@ -1,0 +1,104 @@
+package radio
+
+import (
+	"time"
+	"github.com/faiface/beep/speaker"
+)
+
+//Types
+type Radio struct {
+	Song *Song
+	Queue *Queue
+	stopUpdating chan bool
+}
+
+type Queue struct {
+	Songs []string
+	Original []string
+	Index int64
+	Length int64
+}
+
+	//Create
+//Radio
+func NewRadio(songList []string) *Radio {
+	radio := new(Radio)
+	
+	radio.Queue = radio.NewQueue(songList)
+	radio.Song = NewSong(radio.Queue.Songs[0])
+	radio.stopUpdating  = make(chan bool, 100)
+	
+	return radio
+}
+
+//Queue
+func (r *Radio) NewQueue(songList []string) *Queue {
+	queue := new(Queue)
+	queue.Index = 0
+	queue.Length = int64(len(songList))
+
+	//Get Music Paths
+	for _, songItem := range songList {
+		queue.Songs = append(queue.Songs, songItem)
+	}
+	
+	return queue
+}
+
+	//Update
+func (r *Radio) startUpdate() {
+	go func() {
+		for {
+			select {
+				case <- r.stopUpdating:
+					return
+				default:
+					speaker.Lock()
+					pos := r.Song.streamer.Position()
+					end := r.Song.streamer.Len()
+					speaker.Unlock()
+					
+					if pos == end {
+						r.GetQueueNext()
+					}
+					time.Sleep(time.Second/2)
+					
+	   		 }
+		}
+	}()
+}
+
+func (r *Radio) endUpdate() {
+	r.stopUpdating <- true
+}
+	
+//Utils
+func (r *Radio) Close() {
+	r.Song.Close()
+}
+
+//Actions
+func (r *Radio) Play() {
+	r.startUpdate()
+	r.Song.Play()
+}
+
+//Queue
+func (r *Radio) newQueueSong(path string) {
+	r.Song.Close()
+	r.Song = NewSong(path)
+	r.Song.Play()
+}
+
+func (r *Radio) GetQueueNext() {
+	//if queue exists
+	if r.Queue.Length != 0 {
+		if r.Queue.Index < r.Queue.Length - 1 {
+			r.Queue.Index++
+		} else {
+			r.Queue.Index = 0
+		}
+		newSongPath := r.Queue.Songs[r.Queue.Index]
+		r.newQueueSong(newSongPath)
+	}
+}
