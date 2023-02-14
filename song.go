@@ -64,7 +64,13 @@ func (s *Song) Play() {
 	resampled := Resample(s)
 	
 	s.Ctrl = &beep.Ctrl{Streamer: resampled}
-	speaker.Play(resampled)
+	speaker.Play(s.Ctrl)
+}
+
+func (s *Song) Pause() {
+	speaker.Lock()
+	s.Ctrl.Paused = true
+	speaker.Unlock()
 }
 
 func (s *Song) Mute() {

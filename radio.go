@@ -28,6 +28,8 @@ func NewRadio(songList []string) *Radio {
 	radio.Song = NewSong(radio.Queue.Songs[0])
 	radio.stopUpdating  = make(chan bool, 100)
 	
+	speaker.Clear()
+	
 	return radio
 }
 
@@ -73,6 +75,10 @@ func (r *Radio) endUpdate() {
 }
 	
 //Utils
+func (r *Radio) IsPlaying() bool {
+	return r.Song.Ctrl.Paused
+}
+
 func (r *Radio) Close() {
 	r.Song.Close()
 }
@@ -81,6 +87,16 @@ func (r *Radio) Close() {
 func (r *Radio) Play() {
 	r.startUpdate()
 	r.Song.Play()
+}
+
+func (r *Radio) Mute() {
+	speaker.Clear()
+	r.endUpdate()
+}
+
+func (r *Radio) Pause() {
+	r.Song.Pause()
+	r.endUpdate()
 }
 
 //Queue

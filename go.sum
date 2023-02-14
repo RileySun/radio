@@ -1,4 +1,6 @@
 github.com/DATA-DOG/go-sqlmock v1.3.3/go.mod h1:f/Ixk793poVmq4qj/V1dPUg2JEAKC73Q5eFN3EC/SaM=
+github.com/RileySun/Radio v0.0.0-20230212130138-d97eff5aef21 h1:vga+reKOvBIeNzB5q0h4cejZVTU0OXTKh+zj2w4c/gg=
+github.com/RileySun/Radio v0.0.0-20230212130138-d97eff5aef21/go.mod h1:WiLiG3C/T2/rT9Vm7JyfVCXNktM2DOOT/PJNJaK9/Zk=
 github.com/d4l3k/messagediff v1.2.2-0.20190829033028-7e0a312ae40b/go.mod h1:Oozbb1TVXFac9FtSIxHBMnBCq2qeH/2KkEQxENCrlLo=
 github.com/faiface/beep v1.1.0 h1:A2gWP6xf5Rh7RG/p9/VAW2jRSDEGQm5sbOb38sf5d4c=
 github.com/faiface/beep v1.1.0/go.mod h1:6I8p6kK2q4opL/eWb+kAkk38ehnTunWeToJB+s51sT4=
