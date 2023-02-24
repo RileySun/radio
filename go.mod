@@ -5,12 +5,12 @@ go 1.19
 require github.com/faiface/beep v1.1.0
 
 require (
-	github.com/RileySun/Radio v0.0.0-20230212130138-d97eff5aef21 // indirect
 	github.com/hajimehoshi/go-mp3 v0.3.0 // indirect
-	github.com/hajimehoshi/oto v0.7.1 // indirect
+	github.com/hajimehoshi/oto v1.0.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	golang.org/x/exp v0.0.0-20190306152737-a1d7652674e8 // indirect
-	golang.org/x/image v0.0.0-20190227222117-0694c2d4d067 // indirect
-	golang.org/x/mobile v0.0.0-20190415191353-3e0bab5405d6 // indirect
-	golang.org/x/sys v0.0.0-20190626150813-e07cf5db2756 // indirect
+	golang.org/x/exp v0.0.0-20190731235908-ec7cb31e5a56 // indirect
+	golang.org/x/exp/shiny v0.0.0-20230223210539-50820d90acfd // indirect
+	golang.org/x/image v0.5.0 // indirect
+	golang.org/x/mobile v0.0.0-20221110043201-43a038452099 // indirect
+	golang.org/x/sys v0.5.0 // indirect
 )
