@@ -7,6 +7,7 @@ import (
 
 //Types
 type Radio struct {
+	Paused bool
 	Song *Song
 	Queue *Queue
 	stopUpdating chan bool
@@ -24,6 +25,7 @@ type Queue struct {
 func NewRadio(songList []string) *Radio {
 	radio := new(Radio)
 	
+	radio.Paused = false
 	radio.Queue = radio.NewQueue(songList)
 	radio.Song = NewSong(radio.Queue.Songs[0])
 	radio.stopUpdating  = make(chan bool, 100)
@@ -76,7 +78,7 @@ func (r *Radio) endUpdate() {
 	
 //Utils
 func (r *Radio) IsPlaying() bool {
-	return r.Song.Ctrl.Paused
+	return !r.Song.Ctrl.Paused
 }
 
 func (r *Radio) Close() {
@@ -86,7 +88,8 @@ func (r *Radio) Close() {
 //Actions
 func (r *Radio) Play() {
 	r.startUpdate()
-	r.Song.Play()
+	r.Song.Play(!r.Paused)
+	r.Paused = false
 }
 
 func (r *Radio) Mute() {
@@ -95,6 +98,13 @@ func (r *Radio) Mute() {
 }
 
 func (r *Radio) Pause() {
+	r.Paused = true
+	r.Song.Pause()
+	r.endUpdate()
+}
+
+func (r *Radio) Stop() {
+	r.Paused = false
 	r.Song.Pause()
 	r.endUpdate()
 }
@@ -103,7 +113,7 @@ func (r *Radio) Pause() {
 func (r *Radio) newQueueSong(path string) {
 	r.Song.Close()
 	r.Song = NewSong(path)
-	r.Song.Play()
+	r.Song.Play(true)
 }
 
 func (r *Radio) GetQueueNext() {

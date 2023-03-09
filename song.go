@@ -59,8 +59,10 @@ func (s *Song) IsEnded() bool {
 }
 
 //Actions
-func (s *Song) Play() {
-	_ = s.streamer.Seek(0)
+func (s *Song) Play(restart bool) {
+	if restart {
+		_ = s.streamer.Seek(0)
+	}
 	resampled := Resample(s)
 	
 	s.Ctrl = &beep.Ctrl{Streamer: resampled}
