@@ -31,7 +31,7 @@ func NewSong(filepath string) *Song {
 		Path:filepath,
 	}
 	
-	file := OpenSongFile(currentSong.filepath)
+	file := OpenSongFile(currentSong.Path)
 	
 	var err error
 	currentSong.streamer, currentSong.format, err = mp3.Decode(file)
