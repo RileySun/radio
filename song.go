@@ -63,7 +63,11 @@ func (s *Song) Play(restart bool) {
 	resampled := Resample(s)
 	
 	s.Ctrl = &beep.Ctrl{Streamer: resampled}
-	speaker.Play(s.Ctrl)
+	speaker.Play(beep.Seq(s.Ctrl, beep.Callback(func() {
+		if s.OnEnd != nil {
+			s.OnEnd()
+		}
+	})))
 }
 
 func (s *Song) PlayOnce() {
@@ -76,6 +80,15 @@ func (s *Song) PlayOnce() {
 			s.OnEnd()
 		}
 	})))
+}
+
+func (s *Song) Loop() {
+	_ = s.streamer.Seek(0)
+	resampled := Resample(s)
+	loop := beeb.Loop(-1, resampled)
+	
+	s.Ctrl = &beep.Ctrl{Streamer: resampled}
+	speaker.Play(s.Ctrl)
 }
 
 func (s *Song) Pause() {
