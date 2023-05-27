@@ -1,8 +1,9 @@
 package radio
 
 import(
-	"log"
 	"os"
+	"log"
+	
 	"github.com/faiface/beep"
 	"github.com/faiface/beep/mp3"
 	"github.com/faiface/beep/speaker"
@@ -43,11 +44,10 @@ func NewSong(filepath string) *Song {
 }
 
 func NewSongFromBytes(byteData []byte) *Song {	
-	currentSong := &Song {
-		Path:filepath,
-	}
+	currentSong := &Song{}
 	
-	file := bytes.NewReader(byteData)
+	file := NewVirtualFile()
+	_, _ = file.Write(byteData)
 	
 	var err error
 	currentSong.streamer, currentSong.format, err = mp3.Decode(file)
