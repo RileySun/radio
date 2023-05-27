@@ -42,6 +42,22 @@ func NewSong(filepath string) *Song {
 	return currentSong
 }
 
+func NewSongFromBytes(byteData []byte) *Song {	
+	currentSong := &Song {
+		Path:filepath,
+	}
+	
+	file := bytes.NewReader(byteData)
+	
+	var err error
+	currentSong.streamer, currentSong.format, err = mp3.Decode(file)
+	if err != nil {
+		log.Fatal(err)
+	}
+	
+	return currentSong
+}
+
 //Utils
 func OpenSongFile(filepath string) *os.File {
 	f, err := os.Open(filepath)
