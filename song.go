@@ -74,7 +74,10 @@ func Resample(s *Song) *beep.Resampler  {
 //Actions
 func (s *Song) Play(restart bool) {
 	if restart {
-		_ = s.streamer.Seek(0)
+		seekErr := s.streamer.Seek(0)
+		if seekErr != nil {
+			log.Fatal(seekErr)
+		}
 	}
 	resampled := Resample(s)
 	
@@ -87,7 +90,10 @@ func (s *Song) Play(restart bool) {
 }
 
 func (s *Song) PlayOnce() {
-	_ = s.streamer.Seek(0)
+	seekErr := s.streamer.Seek(0)
+	if seekErr != nil {
+		log.Fatal(seekErr)
+	}
 	resampled := Resample(s)
 	
 	s.Ctrl = &beep.Ctrl{Streamer: resampled}
