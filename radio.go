@@ -14,7 +14,7 @@ type Radio struct {
 }
 
 type Queue struct {
-	Songs []string
+	Songs [][]byte
 	Original []string
 	Index int64
 	Length int64
@@ -22,12 +22,12 @@ type Queue struct {
 
 	//Create
 //Radio
-func NewRadio(songList []string) *Radio {
+func NewRadio(songByteList [][]byte) *Radio {
 	radio := new(Radio)
 	
 	radio.Paused = false
-	radio.Queue = radio.NewQueue(songList)
-	radio.Song = NewSong(radio.Queue.Songs[0])
+	radio.Queue = radio.NewQueue(songByteList)
+	radio.Song = NewSongFromBytes(radio.Queue.Songs[0])
 	radio.stopUpdating  = make(chan bool, 100)
 	
 	speaker.Clear()
@@ -36,7 +36,7 @@ func NewRadio(songList []string) *Radio {
 }
 
 //Queue
-func (r *Radio) NewQueue(songList []string) *Queue {
+func (r *Radio) NewQueue(songList [][]byte) *Queue {
 	queue := new(Queue)
 	queue.Index = 0
 	queue.Length = int64(len(songList))
@@ -110,9 +110,9 @@ func (r *Radio) Stop() {
 }
 
 //Queue
-func (r *Radio) newQueueSong(path string) {
+func (r *Radio) newQueueSong(songBytes []byte) {
 	r.Song.Close()
-	r.Song = NewSong(path)
+	r.Song = NewSongFromBytes(songBytes)
 	r.Song.Play(true)
 }
 
@@ -125,6 +125,7 @@ func (r *Radio) GetQueueNext() {
 			r.Queue.Index = 0
 		}
 		newSongPath := r.Queue.Songs[r.Queue.Index]
-		r.newQueueSong(newSongPath)
+		newSongBytes := r.Queue.Songs[r.Queue.Index]
+		r.newQueueSong(newSongBytes)
 	}
 }
