@@ -124,7 +124,6 @@ func (r *Radio) GetQueueNext() {
 		} else {
 			r.Queue.Index = 0
 		}
-		newSongPath := r.Queue.Songs[r.Queue.Index]
 		newSongBytes := r.Queue.Songs[r.Queue.Index]
 		r.newQueueSong(newSongBytes)
 	}
