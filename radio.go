@@ -2,7 +2,7 @@ package radio
 
 import (
 	"time"
-	"github.com/faiface/beep/speaker"
+	"github.com/gopxl/beep/speaker"
 )
 
 //Types
