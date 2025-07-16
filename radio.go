@@ -1,16 +1,17 @@
 package radio
 
 import (
-	"time"
-	"github.com/gopxl/beep/speaker"
+	
 )
 
 //Types
 type Radio struct {
 	Paused bool
+	Volume float64
 	Song *Song
 	Queue *Queue
 	stopUpdating chan bool
+	Format string
 }
 
 type Queue struct {
@@ -22,24 +23,26 @@ type Queue struct {
 
 	//Create
 //Radio
-func NewRadio(songByteList [][]byte) *Radio {
-	radio := new(Radio)
+func NewRadio(songByteList [][]byte, format string) *Radio {
+	newRadio := &Radio {
+		Paused:false,
+		Format:format,
+		Volume:1,
+	}
 	
-	radio.Paused = false
-	radio.Queue = radio.NewQueue(songByteList)
-	radio.Song = NewSongFromBytes(radio.Queue.Songs[0])
-	radio.stopUpdating  = make(chan bool, 100)
+	newRadio.Queue = newRadio.NewQueue(songByteList)
+	newRadio.Song = NewSong(newRadio.Queue.Songs[0], newRadio.Format)
+	newRadio.Song.OnEnd = newRadio.GetQueueNext
 	
-	speaker.Clear()
-	
-	return radio
+	return newRadio
 }
 
 //Queue
 func (r *Radio) NewQueue(songList [][]byte) *Queue {
-	queue := new(Queue)
-	queue.Index = 0
-	queue.Length = int64(len(songList))
+	queue := &Queue {
+		Index:0,
+		Length:int64(len(songList)),
+	}
 
 	//Get Music Paths
 	for _, songItem := range songList {
@@ -48,37 +51,10 @@ func (r *Radio) NewQueue(songList [][]byte) *Queue {
 	
 	return queue
 }
-
-	//Update
-func (r *Radio) startUpdate() {
-	go func() {
-		for {
-			select {
-				case <- r.stopUpdating:
-					return
-				default:
-					speaker.Lock()
-					pos := r.Song.streamer.Position()
-					end := r.Song.streamer.Len()
-					speaker.Unlock()
-					
-					if pos == end {
-						r.GetQueueNext()
-					}
-					time.Sleep(time.Second/2)
-					
-	   		 }
-		}
-	}()
-}
-
-func (r *Radio) endUpdate() {
-	r.stopUpdating <- true
-}
 	
 //Utils
 func (r *Radio) IsPlaying() bool {
-	return !r.Song.Ctrl.Paused
+	return r.Song.IsPlaying()
 }
 
 func (r *Radio) Close() {
@@ -87,35 +63,40 @@ func (r *Radio) Close() {
 
 //Actions
 func (r *Radio) Play() {
-	r.startUpdate()
-	r.Song.Play(!r.Paused)
+	r.Song.Play()
 	r.Paused = false
 }
 
 func (r *Radio) Mute() {
-	speaker.Clear()
-	r.endUpdate()
+	r.Song.Mute()
 }
 
 func (r *Radio) Pause() {
-	r.Paused = true
-	r.Song.Pause()
-	r.endUpdate()
+	if r.IsPlaying() {
+		r.Paused = true
+		r.Song.Pause()
+	}
 }
 
 func (r *Radio) Stop() {
 	r.Paused = false
 	r.Song.Pause()
-	r.endUpdate()
+}
+
+func (r *Radio) SetVolume(newVolume float64) {
+	if newVolume > 1 {
+		newVolume = 1
+	}
+	if newVolume <= 0 {
+		newVolume = 0.0001
+		r.Paused = true
+	}
+	
+	r.Volume = newVolume
+	r.Song.SetVolume(r.Volume)
 }
 
 //Queue
-func (r *Radio) newQueueSong(songBytes []byte) {
-	r.Song.Close()
-	r.Song = NewSongFromBytes(songBytes)
-	r.Song.Play(true)
-}
-
 func (r *Radio) GetQueueNext() {
 	//if queue exists
 	if r.Queue.Length != 0 {
@@ -124,7 +105,11 @@ func (r *Radio) GetQueueNext() {
 		} else {
 			r.Queue.Index = 0
 		}
-		newSongBytes := r.Queue.Songs[r.Queue.Index]
-		r.newQueueSong(newSongBytes)
+		songBytes := r.Queue.Songs[r.Queue.Index]
+		r.Song.Close()
+		r.Song = NewSong(songBytes, r.Format)
+		r.Song.SetVolume(r.Volume)
+		r.Song.OnEnd = r.GetQueueNext
+		r.Song.Play()
 	}
 }

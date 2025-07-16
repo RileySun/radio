@@ -1,126 +1,151 @@
 package radio
 
 import(
-	"os"
-	"log"
+	"io"
+	"time"
+	"bytes"
 	
-	"github.com/gopxl/beep"
-	"github.com/gopxl/beep/mp3"
-	"github.com/gopxl/beep/speaker"
+	"github.com/hajimehoshi/ebiten/v2/audio"
+	"github.com/hajimehoshi/ebiten/v2/audio/mp3"
+	"github.com/hajimehoshi/ebiten/v2/audio/vorbis"
 )
 
 type Song struct {
-	Path string
-	file *os.File
-	streamer beep.StreamSeekCloser
-	format beep.Format
-	Ctrl *beep.Ctrl
+	context *audio.Context
+	player  *audio.Player
+	
+	current      time.Duration
+	total        time.Duration
+	
+	volume128    int //128
+	paused bool
+	
+	stopUpdating chan(bool)
 	
 	OnEnd func()
 }
 
-var oldSampleRate beep.SampleRate
+type audioStream interface {
+	io.ReadSeeker
+	Length() int64
+}
 
+
+//Context
+const sampleRate = 44100
+var audioContext *audio.Context
 func init() {
-	oldSampleRate = 44100
-	speaker.Init(oldSampleRate, 1)
+	audioContext = audio.NewContext(sampleRate)
 }
 
 //Constructor
-func NewSong(filepath string) *Song {	
-	currentSong := &Song {
-		Path:filepath,
+func NewSong(byteData []byte, format string) *Song {	
+	song := &Song{
+		context:audioContext,
+		volume128:128,
+		stopUpdating:make(chan bool),
 	}
 	
-	file := OpenSongFile(currentSong.Path)
-	
+	//setup
+	const bytesPerSample = 8
+	var s audioStream
 	var err error
-	currentSong.streamer, currentSong.format, err = mp3.Decode(file)
+	
+	//Audio Type
+	switch format {
+		case "ogg":
+			s, err = vorbis.DecodeF32(bytes.NewReader(byteData))
+		case "mp3":
+			s, err = mp3.DecodeF32(bytes.NewReader(byteData))
+	}
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	
-	return currentSong
-}
-
-func NewSongFromBytes(byteData []byte) *Song {	
-	currentSong := &Song{}
-	
-	file := NewVirtualFile()
-	_, _ = file.Write(byteData)
-	
-	var err error
-	currentSong.streamer, currentSong.format, err = mp3.Decode(file)
+	song.player, err = song.context.NewPlayerF32(s)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	
-	return currentSong
-}
-
-//Utils
-func OpenSongFile(filepath string) *os.File {
-	f, err := os.Open(filepath)
-	if err != nil {
-		log.Fatal(err)
+	//Props
+	song.total = time.Second * time.Duration(s.Length()) / bytesPerSample / sampleRate
+	if song.total == 0 {
+		song.total = 1
 	}
-	return f
+	
+	return song
 }
 
-func Resample(s *Song) *beep.Resampler  {
-	return beep.Resample(1, oldSampleRate, s.format.SampleRate, s.streamer)
+//Update
+func (s *Song) startUpdate() {
+	go func() {
+		for {
+			select {
+				case <- s.stopUpdating:
+					return
+				default:
+					if s.player.Position() >= s.total {
+						if s.OnEnd != nil {
+							s.OnEnd()
+						}
+						
+						s.endUpdate()
+					}
+					time.Sleep(time.Second/2)	
+	   		 }
+		}
+	}()
+}
+
+func (s *Song) endUpdate() {
+	s.stopUpdating <- true
 }
 
 //Actions
-func (s *Song) Play(restart bool) {
-	if restart {
-		seekErr := s.streamer.Seek(0)
-		if seekErr != nil {
-			log.Fatal(seekErr)
-		}
-	}
-	resampled := Resample(s)
-	
-	s.Ctrl = &beep.Ctrl{Streamer: resampled}
-	speaker.Play(beep.Seq(s.Ctrl, beep.Callback(func() {
-		if s.OnEnd != nil {
-			s.OnEnd()
-		}
-	})))
+func (s *Song) Play() {
+	s.startUpdate()
+	s.player.Play()
 }
 
 func (s *Song) PlayOnce() {
-	seekErr := s.streamer.Seek(0)
-	if seekErr != nil {
-		log.Fatal(seekErr)
+	go func() {
+		s.startUpdate()
+	}()
+	s.player.Rewind()
+	s.player.Play()
+}
+
+func (s *Song) SetVolume(newVolume float64) {
+	if newVolume > 1 {
+		newVolume = 1
 	}
-	resampled := Resample(s)
-	
-	s.Ctrl = &beep.Ctrl{Streamer: resampled}
-	speaker.Play(beep.Seq(s.Ctrl, beep.Callback(func() {
-		if s.OnEnd != nil {
-			s.OnEnd()
-		}
-	})))
+	if newVolume <= 0{
+		newVolume = 0.00001
+	}
+	s.player.SetVolume(newVolume)
 }
 
 func (s *Song) Loop() {
-	_ = s.streamer.Seek(0)
-	loop := beep.Loop(-1, s.streamer)
-	s.Ctrl = &beep.Ctrl{Streamer: loop}
-	speaker.Play(s.Ctrl)
+	
 }
 
 func (s *Song) Pause() {
-	speaker.Lock()
-	s.Ctrl.Paused = true
-	speaker.Unlock()
+	if s.IsPlaying() {
+		s.player.Pause()
+		go func() {
+			s.endUpdate()
+		}()//Seperate thread makes it not lag
+	}
 }
 
 func (s *Song) Mute() {
-	speaker.Clear()
+	s.Pause()
+}
+
+func (s *Song) Close() {
+	s.player.Close()
 }
 	
-func (s *Song) Close() {
-	s.streamer.Close()
+func (s *Song) IsPlaying() bool {
+	return s.player.IsPlaying()
 }
