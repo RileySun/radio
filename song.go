@@ -42,8 +42,7 @@ func init() {
 func NewSong(byteData []byte, format string) *Song {	
 	song := &Song{
 		context:audioContext,
-		volume128:128,
-		stopUpdating:make(chan bool),
+		stopUpdating:make(chan bool, 5),
 	}
 	
 	//setup

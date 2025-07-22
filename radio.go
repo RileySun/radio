@@ -16,7 +16,6 @@ type Radio struct {
 
 type Queue struct {
 	Songs [][]byte
-	Original []string
 	Index int64
 	Length int64
 }
@@ -31,22 +30,18 @@ func NewRadio(songByteList [][]byte, format string) *Radio {
 	}
 	
 	newRadio.Queue = newRadio.NewQueue(songByteList)
-	newRadio.Song = NewSong(newRadio.Queue.Songs[0], newRadio.Format)
-	newRadio.Song.OnEnd = newRadio.GetQueueNext
+	//newRadio.Song = NewSong(newRadio.Queue.Songs[0], newRadio.Format)
+	//newRadio.Song.OnEnd = newRadio.GetQueueNext
 	
 	return newRadio
 }
 
 //Queue
-func (r *Radio) NewQueue(songList [][]byte) *Queue {
+func (r *Radio) NewQueue(songByteList [][]byte) *Queue {
 	queue := &Queue {
 		Index:0,
-		Length:int64(len(songList)),
-	}
-
-	//Get Music Paths
-	for _, songItem := range songList {
-		queue.Songs = append(queue.Songs, songItem)
+		Length:int64(len(songByteList)),
+		Songs:songByteList,
 	}
 	
 	return queue
