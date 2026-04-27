@@ -1,6 +1,6 @@
 module github.com/RileySun/radio
 
-go 1.26.1
+go 1.24.3
 
 require github.com/hajimehoshi/ebiten/v2 v2.9.7
 

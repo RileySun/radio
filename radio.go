@@ -30,8 +30,8 @@ func NewRadio(songByteList [][]byte, format string) *Radio {
 	}
 	
 	newRadio.Queue = newRadio.NewQueue(songByteList)
-	//newRadio.Song = NewSong(newRadio.Queue.Songs[0], newRadio.Format)
-	//newRadio.Song.OnEnd = newRadio.GetQueueNext
+	newRadio.Song = NewSong(newRadio.Queue.Songs[0], newRadio.Format)
+	newRadio.Song.OnEnd = newRadio.GetQueueNext
 	
 	return newRadio
 }

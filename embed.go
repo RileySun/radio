@@ -25,7 +25,7 @@ type EmbedQueue struct {
 	//Create
 //EmbedRadio
 func NewEmbedRadio(songList []string, format string, embedFiles embed.FS) *EmbedRadio {
-	embedRadio := &EmbedRadio {
+	embedRadio := &EmbedRadio{
 		Paused:false,
 		Format:format,
 		Volume:1,
